@@ -204,31 +204,6 @@ def scenario_II_link_eval():
     return
 
 
-def sim_comp(z, test_edges):
-    out = (z[test_edges[0]] * z[test_edges[1]]).sum(dim=-1)
-    out = out.view(-1).sigmoid()
-    # auc = roc_auc_score(test_data.edge_label.cpu().numpy(), out.detach().cpu().numpy())
-    m_sim = torch.mean(out)
-
-
-def sim_comp_2(z, test_edges):
-    z = z.cpu().detach().numpy()
-    from scipy.spatial.distance import cosine
-    sim_list = []
-    for edge in test_edges:
-        sim = 1 - cosine(z[edge[0]], z[edge[1]])
-        sim_list.append(sim)
-    print("sim:", np.mean(sim_list))
-    pred = np.array(sim_list, dtype=np.float64)
-    where_are_nan = np.isnan(pred)
-    where_are_inf = np.isinf(pred)
-    pred[where_are_nan] = 0
-    pred[where_are_inf] = 0
-
-    auc = roc_auc_score(test_edge_labels, pred)
-    print("auc", auc)
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--device', type=str, default='cuda:0')
@@ -238,6 +213,7 @@ if __name__ == '__main__':
     parser.add_argument('--verbose', type=str, default='train,eval,final')
     parser.add_argument('--save_split', type=str, nargs='?')
     parser.add_argument('--load_split', type=str, nargs='?')
+	parser.add_argument('--weights', type=float, default=1)
     default_param = {
         'learning_rate': 0.01,
         'num_hidden': 256,
@@ -313,7 +289,7 @@ if __name__ == '__main__':
     num_nodes = ori_train_data.num_nodes
     priv_neighbor_adj = get_priv_adj(ori_test_data, num_nodes)
 
-    weights = 5
+    weights = args.weights
     weights_matrix = get_weight_matrix(priv_neighbor_adj, weights).to(device)
 
     #########################################################
